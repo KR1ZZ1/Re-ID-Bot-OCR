@@ -34,7 +34,7 @@ Compare(this, result, ByRef found := "", ByRef fixed := "", reocr := "") {
                 currid := FindString(currid) ; Correct OCR Errors
             
             if ((currnum = "UNKNOWN" || currid = -1) && reocr.ocrt = "win10") { ; Use Tesseract for weird ocr reads
-                reocr.result := Vis2.OCR(reocr.Bitmap)
+                result := Vis2.OCR(reocr.Bitmap)
                 goto, unknownread
                 }
 
