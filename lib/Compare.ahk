@@ -2,11 +2,15 @@
 #Include <FindString>
 Compare(this, result, ByRef found := "", ByRef fixed := "", reocr := "") {
     unknownread:
+    ; Manual fixes for things the Levenshtein Distance doesnt easily fix.
+    result := StrReplace(result, "0/0") ; Manual fixes
     result := StrReplace(result, "+ g", "+ 9")
+    result := StrReplace(result, "DMge", "Dodge")
+    result := StrReplace(result, "tix_ige", "Dodge")
+
     result := StrReplace(result, "-")
     result := StrReplace(result, "+")
     result := StrReplace(result, "%")
-    result := StrReplace(result, "0/0")
     resultarray := StrSplit(result, "`n", "`r")
 
     count := 0, found := 0, fixed := ""
