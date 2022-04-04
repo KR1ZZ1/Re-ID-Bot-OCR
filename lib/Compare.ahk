@@ -31,6 +31,9 @@ Compare(this, result, ByRef found := "", ByRef fixed := "", reocr := "") {
             currid := Trim(StrReplace(resultid, currnum)) ; Cleans Current ID Up
             currnum := (!currnum)?"UNKNOWN":currnum ; Checks if a number was found and replaces with 999 if not.
 
+            if (this.Settings.fixstats)
+                currid := FindString(currid) ; Correct OCR Errors
+            
             if ((currnum = "UNKNOWN" || currid = -1) && reocr.ocrt = "win10") { ; Use Tesseract for weird ocr reads
                 reocr.ocrt := "tess4"
                 reocr.OCR()
@@ -40,9 +43,6 @@ Compare(this, result, ByRef found := "", ByRef fixed := "", reocr := "") {
                 reocr.ocrt := "win10"
                 goto, unknownread
                 }
-
-            If (this.Settings.fixstats)
-                currid := FindString(currid) ; Correct OCR Errors
 
             currid := StrReplace(currid, "Critical", "Crit")
             currid := StrReplace(currid, "Healing", "Heal")
