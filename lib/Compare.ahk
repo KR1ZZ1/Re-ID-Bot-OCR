@@ -21,7 +21,6 @@ Compare(this, result, ByRef found := "", ByRef fixed := "", reocr := "") {
                 Continue ; Skip empty IDs
 
             currnum := 0
-
             for _,num in StrSplit(resultid, " ") { ; Finds Current ID's Number
                 if num is not integer
                     Continue
