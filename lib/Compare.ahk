@@ -7,6 +7,7 @@ Compare(this, result, ByRef found := "", ByRef fixed := "", reocr := "") {
     result := StrReplace(result, "+ g", "+ 9")
     result := StrReplace(result, "DMge", "Dodge")
     result := StrReplace(result, "tix_ige", "Dodge")
+    result := StrReplace(result, "Dcxfge", "Dodge")
 
     result := StrReplace(result, "-")
     result := StrReplace(result, "+")
