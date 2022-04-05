@@ -3,7 +3,8 @@
 Compare(this, result, ByRef found := "", ByRef fixed := "", reocr := "") {
     unknownread:
     ; Manual fixes for things the Levenshtein Distance doesnt easily fix.
-    result := StrReplace(result, "0/0") ; Manual fixes
+    result := StrReplace(result, "0/0")
+    result := StrReplace(result, "070")
     result := StrReplace(result, "+ g", "+ 9")
     result := StrReplace(result, "DMge", "Dodge")
     result := StrReplace(result, "tix_ige", "Dodge")
