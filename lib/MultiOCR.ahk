@@ -97,11 +97,9 @@ Class MultiOCR {
                 DllCall("DeleteObject", "Ptr", pIRandomAccessStream)
             }
 
-            ; Gdip_SetBitmapToClipboard(this.Bitmap) ; Uncomment for Testing / Debug purposes 
-
-            ; After ocr
-            ; DllCall("DeleteObject", "Ptr", this.hBitmap)
-            Gdip_DisposeImage(this.Bitmap)
+            ; Remember to close out these after done using them!
+                ; DllCall("DeleteObject", "Ptr", this.hBitmap)
+                ; Gdip_DisposeImage(this.Bitmap)
             return this.result
             }
     ; =====

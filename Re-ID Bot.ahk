@@ -162,8 +162,6 @@
 		if (Info.Settings.showimg) { ; If user wants images displayed
 			GuiControl, 1:, imagedisplay, % "HBITMAP:*" gc.hBitmap
 			}
-		DllCall("DeleteObject", "Ptr", gc.hBitmap) ; Clearing bitmap from memory
-		gc.hBitmap := "" ; Clearing variable content after bitmap
 		result := ""
 		for _,curr in StrSplit(gc.result, "`n", "`r") {
 			if !curr
@@ -177,6 +175,9 @@
 				goto, CheckAgain
 			}
 		Compare(Info, result, found, fixedresult, gc)
+		DllCall("DeleteObject", "Ptr", gc.hBitmap) ; Clearing hbitmap from memory
+        Gdip_DisposeImage(gc.Bitmap)
+		gc.Bitmap := gc.hBitmap := "" ; Clearing variable content after (h)bitmap has been used.
 		GuiControl, 1:, outputdisplay, % fixedresult "`nTook " A_TickCount - Tick "ms with " Attempt " attempt" (Attempt > 1 ? "s":"") "."
 
 		if (found) { ; Found ID, stop re-iding

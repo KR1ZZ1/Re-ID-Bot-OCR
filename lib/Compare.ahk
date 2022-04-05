@@ -2,11 +2,17 @@
 #Include <FindString>
 Compare(this, result, ByRef found := "", ByRef fixed := "", reocr := "") {
     unknownread:
+    ; Manual fixes for things the Levenshtein Distance doesnt easily fix.
+    result := StrReplace(result, "0/0")
+    result := StrReplace(result, "070")
     result := StrReplace(result, "+ g", "+ 9")
+    result := StrReplace(result, "DMge", "Dodge")
+    result := StrReplace(result, "tix_ige", "Dodge")
+    result := StrReplace(result, "Dcxfge", "Dodge")
+
     result := StrReplace(result, "-")
     result := StrReplace(result, "+")
     result := StrReplace(result, "%")
-    result := StrReplace(result, "0/0")
     resultarray := StrSplit(result, "`n", "`r")
 
     count := 0, found := 0, fixed := ""
@@ -21,7 +27,6 @@ Compare(this, result, ByRef found := "", ByRef fixed := "", reocr := "") {
                 Continue ; Skip empty IDs
 
             currnum := 0
-
             for _,num in StrSplit(resultid, " ") { ; Finds Current ID's Number
                 if num is not integer
                     Continue
@@ -35,12 +40,7 @@ Compare(this, result, ByRef found := "", ByRef fixed := "", reocr := "") {
                 currid := FindString(currid) ; Correct OCR Errors
             
             if ((currnum = "UNKNOWN" || currid = -1) && reocr.ocrt = "win10") { ; Use Tesseract for weird ocr reads
-                reocr.ocrt := "tess4"
-                reocr.OCR()
-                DllCall("DeleteObject", "Ptr", reocr.hBitmap) ; Clearing bitmap from memory
-                reocr.hBitmap := "" ; Clearing variable content after bitmap
-                result := reocr.result
-                reocr.ocrt := "win10"
+                result := Vis2.OCR(reocr.Bitmap)
                 goto, unknownread
                 }
 
