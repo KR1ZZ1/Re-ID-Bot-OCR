@@ -13,9 +13,8 @@
 			#NoEnv
 			#KeyHistory 0
 			Process, Priority,, H
-			SetControlDelay -1
+			SetControlDelay 5
 			SetBatchLines -1
-			SetWinDelay -1
 			ListLines Off
 	; Remove Tray Icon
 		; #NoTrayIcon <- (May trigger a false-positive malware detection) so use below lines instead
@@ -146,10 +145,8 @@
 			change := 0
 			}
 		GuiControl,, StartB, % ((starttoggle:=!starttoggle) ? "Start":"Stop")
-		rx := Info.IDs.ResetButton.X
-		ry := Info.IDs.ResetButton.Y
-		ix := Info.IDs.IDButton.X
-		iy := Info.IDs.IDButton.Y
+		rx := Info.IDs.ResetButton.X, ry := Info.IDs.ResetButton.Y ; Reset Button Pos
+		ix := Info.IDs.IDButton.X, iy := Info.IDs.IDButton.Y ; Identify Button Pos
 		SetTimer, OCRTimer, % !starttoggle ? 2000:"Off"
 		return
 	OCRTimer:
@@ -187,9 +184,8 @@
 			Msgbox % "ID Found`n" fixedresult
 			return
 			}
-		Loop, 5
+		Loop, 5 ; Attempt reset 5 times in a row to make it more reliable
 			ControlClick,, % "ahk_id " gc.target,, Left, 1, NA x%rx% y%ry%
-		Sleep, 80
 		ControlClick,, % "ahk_id " gc.target,, Left, 1, NA x%ix% y%iy%
 		Sleep, % Info.Settings.iddelay
 		return
