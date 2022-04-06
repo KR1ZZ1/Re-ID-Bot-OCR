@@ -119,8 +119,7 @@
 			WinGetPos,,, guiw, guih, % "ahk_id" botid
 			WinMove, % "ahk_id" botid,,,, % Max(gc.w + 14, guiw), % guih + gc.h - 2
 			GuiControl, 1:, imagedisplay, % "HBITMAP:*" gc.hBitmap
-			DllCall("DeleteObject", "Ptr", gc.hBitmap)
-			gc.hBitmap := ""
+			Gosub, ClearBitmaps
 			}
 
 		TypeController(0)
@@ -164,20 +163,18 @@
 		if result not contains %CheckList%
 			{ ; Checks if any id's / "+" is present in screen capture. If not the screenshot happened too soon.
 				GuiControl, 1:, outputdisplay, % fixedresult "`nTook " A_TickCount - Tick "ms with " Attempt " attempt" (Attempt > 1 ? "s":"") "."
-				if (Attempt > 400) { ; 
+				if (Attempt > 400) {
 					Gosub, OCREnd
 					Msgbox % "Something broke and needs your attention."
 					return
 				}
 				Sleep, % Info.Settings.screendelay
+				Gosub, ClearBitmaps
 				goto, CheckAgain
 			}
 		Compare(Info, result, found, fixedresult, gc)
-		DllCall("DeleteObject", "Ptr", gc.hBitmap) ; Clearing hbitmap from memory
-        Gdip_DisposeImage(gc.Bitmap)
-		gc.Bitmap := gc.hBitmap := "" ; Clearing variable content after (h)bitmap has been used.
 		GuiControl, 1:, outputdisplay, % fixedresult "`nTook " A_TickCount - Tick "ms with " Attempt " attempt" (Attempt > 1 ? "s":"") "."
-
+		Gosub, ClearBitmaps
 		if (found) { ; Found ID, stop re-iding
 			Gosub, OCREnd
 			Msgbox % "ID Found`n" fixedresult
@@ -193,6 +190,11 @@
 		SetTimer, OCRTimer, Off
 		starttoggle := 1
 		GuiControl,, StartB, % "Start"
+		return
+	ClearBitmaps: ; Prevents Memory leaks
+		DllCall("DeleteObject", "Ptr", gc.hBitmap) ; Clearing hbitmap from memory
+        Gdip_DisposeImage(gc.Bitmap)
+		gc.Bitmap := "", gc.hBitmap := "" ; Clearing variable content after (h)bitmap has been used.
 		return
 	ResetChange:
 		Gui, Submit, NoHide
