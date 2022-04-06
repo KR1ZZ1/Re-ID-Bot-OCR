@@ -13,9 +13,7 @@
 			#NoEnv
 			#KeyHistory 0
 			Process, Priority,, H
-			SetControlDelay -1
 			SetBatchLines -1
-			SetWinDelay -1
 			ListLines Off
 	; Remove Tray Icon
 		; #NoTrayIcon <- (May trigger a false-positive malware detection) so use below lines instead
@@ -37,8 +35,6 @@
 			MsgBox, 48, gdiplus error!, Gdiplus failed to start. Please ensure you have gdiplus on your system
 			ExitApp
 			}
-		isWin10 := InStr(A_OSVersion, "10.0")
-
 	; GUI
 		; Gui Vars
 			If (!Info.Settings.savepos)
@@ -68,7 +64,8 @@
 			Gui, 1: Add, Radio, % (Info.IDs.idmode=2?"Checked":"") " x+m vidmode2", Single-ID
 			Gui, 1: Add, Radio, % (Info.IDs.idmode=3?"Checked":"") " x+m vidmode3", Single-ID (Total Minimum)
 			Gui, 1: Add, DDL, % "Choose" Info.IDs.count " xs w30 vcount", 1|2|3|4|5|6|7|8
-			Gui, 1: Add, Button, yp-1 x+m vChangeB gChange Disabled, Change
+			Gui, 1: Add, Checkbox, % (Info.IDs.resetid=1?"Checked":"") " x+m yp+4 vresetid gResetChange", Reset ID
+			Gui, 1: Add, Button, yp-5 x+m vChangeB gChange Disabled, Change
 			Gui, 1: Add, Button, x+m vStartB gStart, Start
 			if (Info.Settings.savetype && Info.IDs.Types[1] != "") {
 				TypeController(0)
@@ -84,7 +81,7 @@
 			Gui, 1: Add, Checkbox, % (Info.Settings.showimg?"Checked":"") " Section x8 y+m vshowimg", Show Image-Capture
 			Gui, 1: Add, Checkbox, % (Info.Settings.fixstats?"Checked":"") " x+m vfixstats", Fix OCR Errors
 			Gui, 1: Add, Edit, Section x8 y+m h17 vscreendelay, % Info.Settings.screendelay
-			Gui, 1: Add, Text, x+m ys+3, ms delay after screen captures
+			Gui, 1: Add, Text, x+m ys+3, ms delay after OCR failed to find information
 			Gui, 1: Add, Edit, Section x8 y+m h17 viddelay, % Info.Settings.iddelay
 			Gui, 1: Add, Text, x+m ys+3, ms delay between Identifications
 			Gui, 1: Add, Button, x7 y+m gApply, Apply
@@ -96,6 +93,7 @@
 
 		Gui, 1: Show, % (Info.GUI.X != "ERROR" || Info.GUI.Y != "ERROR" ? "x" . Info.GUI.X . " y" . Info.GUI.Y:""), % sName
 
+		SetControlDelay, % (Info.IDs.resetid ? "5":"-1")
 		id := FindGame() ; Finds and sets target client
 		gc := new MultiOCR(Info.Settings.ocrengine=1 ? "win10":"tess4", Info.Settings.savepos ? Info.Field:"", id ? id:"")
 		gc.target := id
@@ -103,10 +101,6 @@
 	; <<<<<<<<<<<
 
 ; Hotkeys >>
-	;^f8::
-	;	winregion := !winregion
-	;	WinSet, Region, x y w h
-	;	return
 	^esc::
 		Goto, GuiClose ; Ctrl + ESC = ExitApp
 	; <<<<<<<<<<
@@ -125,13 +119,13 @@
 			WinGetPos,,, guiw, guih, % "ahk_id" botid
 			WinMove, % "ahk_id" botid,,,, % Max(gc.w + 14, guiw), % guih + gc.h - 2
 			GuiControl, 1:, imagedisplay, % "HBITMAP:*" gc.hBitmap
-			DllCall("DeleteObject", "Ptr", gc.hBitmap)
-			gc.hBitmap := ""
+			Gosub, ClearBitmaps
 			}
 
 		TypeController(0)
 		Info.IDs.idmode := idmode1?1:idmode2?2:3
 		Info.IDs.count := count
+		Info.IDs.resetid := resetid
 
 		If (starttoggle && change) {
 			Choices := StrSplit(idchoice, "|"), Minimums := []
@@ -146,10 +140,8 @@
 			change := 0
 			}
 		GuiControl,, StartB, % ((starttoggle:=!starttoggle) ? "Start":"Stop")
-		rx := Info.IDs.ResetButton.X
-		ry := Info.IDs.ResetButton.Y
-		ix := Info.IDs.IDButton.X
-		iy := Info.IDs.IDButton.Y
+		rx := Info.IDs.ResetButton.X, ry := Info.IDs.ResetButton.Y ; Reset Button Pos
+		ix := Info.IDs.IDButton.X, iy := Info.IDs.IDButton.Y ; Identify Button Pos
 		SetTimer, OCRTimer, % !starttoggle ? 2000:"Off"
 		return
 	OCRTimer:
@@ -171,27 +163,43 @@
 		if result not contains %CheckList%
 			{ ; Checks if any id's / "+" is present in screen capture. If not the screenshot happened too soon.
 				GuiControl, 1:, outputdisplay, % fixedresult "`nTook " A_TickCount - Tick "ms with " Attempt " attempt" (Attempt > 1 ? "s":"") "."
+				if (Attempt > 400) {
+					Gosub, OCREnd
+					Msgbox % "Something broke and needs your attention."
+					return
+				}
 				Sleep, % Info.Settings.screendelay
+				Gosub, ClearBitmaps
 				goto, CheckAgain
 			}
 		Compare(Info, result, found, fixedresult, gc)
-		DllCall("DeleteObject", "Ptr", gc.hBitmap) ; Clearing hbitmap from memory
-        Gdip_DisposeImage(gc.Bitmap)
-		gc.Bitmap := gc.hBitmap := "" ; Clearing variable content after (h)bitmap has been used.
 		GuiControl, 1:, outputdisplay, % fixedresult "`nTook " A_TickCount - Tick "ms with " Attempt " attempt" (Attempt > 1 ? "s":"") "."
-
+		Gosub, ClearBitmaps
 		if (found) { ; Found ID, stop re-iding
-			SetTimer, % A_ThisLabel, Off
-			starttoggle := 1
-			GuiControl,, StartB, % "Start"
+			Gosub, OCREnd
 			Msgbox % "ID Found`n" fixedresult
 			return
 			}
-		Loop, 5
-			ControlClick,, % "ahk_id " gc.target,, Left, 1, NA x%rx% y%ry%
-		Sleep, 80
+		if (resetid)
+			Loop, 5 ; Attempt reset 5 times in a row to make it more reliable
+				ControlClick,, % "ahk_id " gc.target,, Left, 1, NA x%rx% y%ry%
 		ControlClick,, % "ahk_id " gc.target,, Left, 1, NA x%ix% y%iy%
 		Sleep, % Info.Settings.iddelay
+		return
+	OCREnd:
+		SetTimer, OCRTimer, Off
+		starttoggle := 1
+		GuiControl,, StartB, % "Start"
+		return
+	ClearBitmaps: ; Prevents Memory leaks
+		DllCall("DeleteObject", "Ptr", gc.hBitmap) ; Clearing hbitmap from memory
+        Gdip_DisposeImage(gc.Bitmap)
+		gc.Bitmap := "", gc.hBitmap := "" ; Clearing variable content after (h)bitmap has been used.
+		return
+	ResetChange:
+		Gui, Submit, NoHide
+		Info.IDs.resetid := resetid
+		SetControlDelay, % (Info.IDs.resetid ? "5":"-1")
 		return
 	Change:
 		change := 1
