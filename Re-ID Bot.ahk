@@ -13,7 +13,6 @@
 			#NoEnv
 			#KeyHistory 0
 			Process, Priority,, H
-			SetControlDelay 5
 			SetBatchLines -1
 			ListLines Off
 	; Remove Tray Icon
@@ -36,8 +35,6 @@
 			MsgBox, 48, gdiplus error!, Gdiplus failed to start. Please ensure you have gdiplus on your system
 			ExitApp
 			}
-		isWin10 := InStr(A_OSVersion, "10.0")
-
 	; GUI
 		; Gui Vars
 			If (!Info.Settings.savepos)
@@ -84,7 +81,7 @@
 			Gui, 1: Add, Checkbox, % (Info.Settings.showimg?"Checked":"") " Section x8 y+m vshowimg", Show Image-Capture
 			Gui, 1: Add, Checkbox, % (Info.Settings.fixstats?"Checked":"") " x+m vfixstats", Fix OCR Errors
 			Gui, 1: Add, Edit, Section x8 y+m h17 vscreendelay, % Info.Settings.screendelay
-			Gui, 1: Add, Text, x+m ys+3, ms delay after screen captures
+			Gui, 1: Add, Text, x+m ys+3, ms delay after OCR failed to find information
 			Gui, 1: Add, Edit, Section x8 y+m h17 viddelay, % Info.Settings.iddelay
 			Gui, 1: Add, Text, x+m ys+3, ms delay between Identifications
 			Gui, 1: Add, Button, x7 y+m gApply, Apply
@@ -96,6 +93,7 @@
 
 		Gui, 1: Show, % (Info.GUI.X != "ERROR" || Info.GUI.Y != "ERROR" ? "x" . Info.GUI.X . " y" . Info.GUI.Y:""), % sName
 
+		SetControlDelay, % (Info.IDs.resetid ? "5":"-1")
 		id := FindGame() ; Finds and sets target client
 		gc := new MultiOCR(Info.Settings.ocrengine=1 ? "win10":"tess4", Info.Settings.savepos ? Info.Field:"", id ? id:"")
 		gc.target := id
@@ -166,6 +164,11 @@
 		if result not contains %CheckList%
 			{ ; Checks if any id's / "+" is present in screen capture. If not the screenshot happened too soon.
 				GuiControl, 1:, outputdisplay, % fixedresult "`nTook " A_TickCount - Tick "ms with " Attempt " attempt" (Attempt > 1 ? "s":"") "."
+				if (Attempt > 400) { ; 
+					Gosub, OCREnd
+					Msgbox % "Something broke and needs your attention."
+					return
+				}
 				Sleep, % Info.Settings.screendelay
 				goto, CheckAgain
 			}
@@ -176,9 +179,7 @@
 		GuiControl, 1:, outputdisplay, % fixedresult "`nTook " A_TickCount - Tick "ms with " Attempt " attempt" (Attempt > 1 ? "s":"") "."
 
 		if (found) { ; Found ID, stop re-iding
-			SetTimer, % A_ThisLabel, Off
-			starttoggle := 1
-			GuiControl,, StartB, % "Start"
+			Gosub, OCREnd
 			Msgbox % "ID Found`n" fixedresult
 			return
 			}
@@ -188,9 +189,15 @@
 		ControlClick,, % "ahk_id " gc.target,, Left, 1, NA x%ix% y%iy%
 		Sleep, % Info.Settings.iddelay
 		return
+	OCREnd:
+		SetTimer, OCRTimer, Off
+		starttoggle := 1
+		GuiControl,, StartB, % "Start"
+		return
 	ResetChange:
 		Gui, Submit, NoHide
 		Info.IDs.resetid := resetid
+		SetControlDelay, % (Info.IDs.resetid ? "5":"-1")
 		return
 	Change:
 		change := 1
