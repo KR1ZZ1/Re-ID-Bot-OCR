@@ -163,13 +163,13 @@
 		if result not contains %CheckList%
 			{ ; Checks if any id's / "+" is present in screen capture. If not the screenshot happened too soon.
 				GuiControl, 1:, outputdisplay, % fixedresult "`nTook " A_TickCount - Tick "ms with " Attempt " attempt" (Attempt > 1 ? "s":"") "."
+				Gosub, ClearBitmaps
 				if (Attempt > 400) {
 					Gosub, OCREnd
 					Msgbox % "Something broke and needs your attention."
 					return
 				}
 				Sleep, % Info.Settings.screendelay
-				Gosub, ClearBitmaps
 				goto, CheckAgain
 			}
 		Compare(Info, result, found, fixedresult, gc)
