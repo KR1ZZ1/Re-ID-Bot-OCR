@@ -67,7 +67,8 @@
 			Gui, 1: Add, Radio, % (Info.IDs.idmode=2?"Checked":"") " x+m vidmode2", Single-ID
 			Gui, 1: Add, Radio, % (Info.IDs.idmode=3?"Checked":"") " x+m vidmode3", Single-ID (Total Minimum)
 			Gui, 1: Add, DDL, % "Choose" Info.IDs.count " xs w30 vcount", 1|2|3|4|5|6|7|8
-			Gui, 1: Add, Button, yp-1 x+m vChangeB gChange Disabled, Change
+			Gui, 1: Add, Checkbox, % (Info.IDs.resetid=1?"Checked":"") " x+m yp+4 vresetid gResetChange", Reset ID
+			Gui, 1: Add, Button, yp-5 x+m vChangeB gChange Disabled, Change
 			Gui, 1: Add, Button, x+m vStartB gStart, Start
 			if (Info.Settings.savetype && Info.IDs.Types[1] != "") {
 				TypeController(0)
@@ -102,10 +103,6 @@
 	; <<<<<<<<<<<
 
 ; Hotkeys >>
-	;^f8::
-	;	winregion := !winregion
-	;	WinSet, Region, x y w h
-	;	return
 	^esc::
 		Goto, GuiClose ; Ctrl + ESC = ExitApp
 	; <<<<<<<<<<
@@ -131,6 +128,7 @@
 		TypeController(0)
 		Info.IDs.idmode := idmode1?1:idmode2?2:3
 		Info.IDs.count := count
+		Info.IDs.resetid := resetid
 
 		If (starttoggle && change) {
 			Choices := StrSplit(idchoice, "|"), Minimums := []
@@ -184,10 +182,15 @@
 			Msgbox % "ID Found`n" fixedresult
 			return
 			}
-		Loop, 5 ; Attempt reset 5 times in a row to make it more reliable
-			ControlClick,, % "ahk_id " gc.target,, Left, 1, NA x%rx% y%ry%
+		if (resetid)
+			Loop, 5 ; Attempt reset 5 times in a row to make it more reliable
+				ControlClick,, % "ahk_id " gc.target,, Left, 1, NA x%rx% y%ry%
 		ControlClick,, % "ahk_id " gc.target,, Left, 1, NA x%ix% y%iy%
 		Sleep, % Info.Settings.iddelay
+		return
+	ResetChange:
+		Gui, Submit, NoHide
+		Info.IDs.resetid := resetid
 		return
 	Change:
 		change := 1
