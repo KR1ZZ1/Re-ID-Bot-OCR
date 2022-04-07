@@ -142,11 +142,15 @@
 		GuiControl,, StartB, % ((starttoggle:=!starttoggle) ? "Start":"Stop")
 		rx := Info.IDs.ResetButton.X, ry := Info.IDs.ResetButton.Y ; Reset Button Pos
 		ix := Info.IDs.IDButton.X, iy := Info.IDs.IDButton.Y ; Identify Button Pos
-		SetTimer, OCRTimer, % !starttoggle ? 2000:"Off"
+		SetTimer, OCRTimer, -1
 		return
 	OCRTimer:
 		Attempt := 0
 		CheckAgain:
+		
+		if (starttoggle) ; Exit if starttoggle is true
+			Exit
+
 		Attempt++
 		Tick := A_TickCount
 		gc.OCR()
@@ -170,7 +174,7 @@
 					return
 				}
 				Sleep, % Info.Settings.screendelay
-				goto, CheckAgain
+				Goto, CheckAgain
 			}
 		Compare(Info, result, found, fixedresult, gc)
 		GuiControl, 1:, outputdisplay, % fixedresult "`nTook " A_TickCount - Tick "ms with " Attempt " attempt" (Attempt > 1 ? "s":"") "."
@@ -185,9 +189,9 @@
 				ControlClick,, % "ahk_id " gc.target,, Left, 1, NA x%rx% y%ry%
 		ControlClick,, % "ahk_id " gc.target,, Left, 1, NA x%ix% y%iy%
 		Sleep, % Info.Settings.iddelay
+		SetTimer, OCRTimer, -1
 		return
 	OCREnd:
-		SetTimer, OCRTimer, Off
 		starttoggle := 1
 		GuiControl,, StartB, % "Start"
 		return
