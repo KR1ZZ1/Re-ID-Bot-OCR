@@ -5,6 +5,7 @@ Compare(this, result, ByRef found := "", ByRef fixed := "", reocr := "") {
     ; Manual fixes for things the Levenshtein Distance doesnt easily fix.
     result := StrReplace(result, "0/0")
     result := StrReplace(result, "070")
+    result := StrReplace(result, "06 Crit", "% Crit")
     result := StrReplace(result, "+ g", "+ 9")
     result := StrReplace(result, "DMge", "Dodge")
     result := StrReplace(result, "tix_ige", "Dodge")
@@ -39,7 +40,7 @@ Compare(this, result, ByRef found := "", ByRef fixed := "", reocr := "") {
             if (this.Settings.fixstats)
                 currid := FindString(currid) ; Correct OCR Errors
             
-            if ((currnum = "UNKNOWN" || currid = -1) && reocr.ocrt = "win10") { ; Use Tesseract for weird ocr reads
+            if ((SubStr(currnum, 1, 1) < 1 || currnum = "UNKNOWN" || currid = -1) && reocr.ocrt = "win10") { ; Use Tesseract for weird ocr reads
                 result := Vis2.OCR(reocr.Bitmap)
                 goto, unknownread
                 }
