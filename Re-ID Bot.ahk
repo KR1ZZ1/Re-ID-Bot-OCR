@@ -23,13 +23,14 @@
 		#Include <RunAsTask> ; Auto-run as admin (May trigger a false-positive malware detection).
 		RunAsTask() ; Auto-elevates script to admin
 
-		#Include <Gdip_All> ; Used mainly for Tesseract
-		#Include <Select> ; Search field select
-		#Include <FindGame> ; Finds all game instances
-		#Include <Compare> ; Used for comparing found stats to chosen stats
-		#Include <MultiOCR> ; Wrapper for Windows OCR Engine and Tesseract
-		#Include <Settings> ; Generate / Load Settings
+		#Include <Gdip_All> 	; Used mainly for Tesseract
+		#Include <Select> 		; Search field select
+		#Include <FindGame> 	; Finds all game instances
+		#Include <Compare> 		; Used for comparing found stats to chosen stats
+		#Include <MultiOCR> 	; Wrapper for Windows OCR Engine and Tesseract
+		#Include <Settings> 	; Generate / Load Settings
 		#Include <GUIFunctions> ; Functions for controlling GUI
+		#Include <ReloadScript> ; Reload script with params
 	; OCR Setup
 		If !pToken := Gdip_Startup() {
 			MsgBox, 48, gdiplus error!, Gdiplus failed to start. Please ensure you have gdiplus on your system
@@ -97,10 +98,16 @@
 		id := FindGame() ; Finds and sets target client
 		gc := new MultiOCR(Info.Settings.ocrengine=1 ? "win10":"tess4", Info.Settings.savepos ? Info.Field:"", id ? id:"")
 		gc.target := id
+
+		if (idReload() && Info.Settings.savepos)
+			Goto, Start
 	return
 	; <<<<<<<<<<<
 
 ; Hotkeys >>
+	#If (WinActive("ahk_id " botid) || WinActive("ahk_id " gc.target))
+		^f5::ReloadScript(!starttoggle ? "/idreload":"")
+	#If
 	^esc::
 		Goto, GuiClose ; Ctrl + ESC = ExitApp
 	; <<<<<<<<<<
@@ -108,12 +115,13 @@
 ; Labels >>
 	Start:
 		Gui, Submit, NoHide
+		scrollcount := 0
 
 		if (!guiw && Info.Settings.showimg) {
 			Tick := A_TickCount
 			gc.OCR()
 			result := StrReplace(gc.result, "`n`n", "`r")
-			GuiControl, 1:Move, outputdisplay, % "h" gc.h
+			GuiControl, 1:Move, outputdisplay, % "h" gc.h + 25
 			GuiControl, 1:, outputdisplay, % result "`nTook " A_TickCount - Tick "ms"
 			GuiControl, 1:Move, imagedisplay, % "w" gc.w " h" gc.h
 			WinGetPos,,, guiw, guih, % "ahk_id" botid
@@ -126,6 +134,7 @@
 		Info.IDs.idmode := idmode1?1:idmode2?2:3
 		Info.IDs.count := count
 		Info.IDs.resetid := resetid
+
 
 		If (starttoggle && change) {
 			Choices := StrSplit(idchoice, "|"), Minimums := []
@@ -140,11 +149,13 @@
 			change := 0
 			}
 		GuiControl,, StartB, % ((starttoggle:=!starttoggle) ? "Start":"Stop")
+		GuiControl, % "1:" (starttoggle ? "Enabled":"Disabled"), SetB
 		rx := Info.IDs.ResetButton.X, ry := Info.IDs.ResetButton.Y ; Reset Button Pos
 		ix := Info.IDs.IDButton.X, iy := Info.IDs.IDButton.Y ; Identify Button Pos
 		SetTimer, OCRTimer, -1
 		return
 	OCRTimer:
+		scrollcount++
 		Attempt := 0
 		CheckAgain:
 		
@@ -166,7 +177,7 @@
 			}
 		if result not contains %CheckList%
 			{ ; Checks if any id's / "+" is present in screen capture. If not the screenshot happened too soon.
-				GuiControl, 1:, outputdisplay, % fixedresult "`nTook " A_TickCount - Tick "ms with " Attempt " attempt" (Attempt > 1 ? "s":"") "."
+				GuiControl, 1:, outputdisplay, % fixedresult "`nTook " A_TickCount - Tick "ms with " Attempt " attempt" (Attempt > 1 ? "s":"") ".`nTotal Scrolls: " scrollcount
 				Gosub, ClearBitmaps
 				if (Attempt > 400) {
 					Gosub, OCREnd
@@ -177,7 +188,7 @@
 				Goto, CheckAgain
 			}
 		Compare(Info, result, found, fixedresult, gc)
-		GuiControl, 1:, outputdisplay, % fixedresult "`nTook " A_TickCount - Tick "ms with " Attempt " attempt" (Attempt > 1 ? "s":"") "."
+		GuiControl, 1:, outputdisplay, % fixedresult "`nTook " A_TickCount - Tick "ms with " Attempt " attempt" (Attempt > 1 ? "s":"") ".`nTotal Scrolls: " scrollcount
 		Gosub, ClearBitmaps
 		if (found) { ; Found ID, stop re-iding
 			Gosub, OCREnd
@@ -193,6 +204,7 @@
 		return
 	OCREnd:
 		starttoggle := 1
+		GuiControl, Enabled, SetB
 		GuiControl,, StartB, % "Start"
 		return
 	ClearBitmaps: ; Prevents Memory leaks
