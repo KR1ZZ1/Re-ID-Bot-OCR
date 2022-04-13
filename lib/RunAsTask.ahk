@@ -9,9 +9,9 @@ RunAsTask() - Auto-elevates script without UAC prompt |  http://ahkscript.org/bo
 _________________________________________________________________________________________________________
 */
  
-RunAsTask() {                         ;  By SKAN,  http://goo.gl/yG6A1F,  CD:19/Aug/2014 | MD:24/Apr/2020
+RunAsTask() { ;  By SKAN,  http://goo.gl/yG6A1F,  CD:19/Aug/2014 | MD:24/Apr/2020, Modified by KR1ZZ1 to allow startup arguments.
 
-  Local CmdLine, TaskName, TaskExists, XML, TaskSchd, TaskRoot, RunAsTask
+  Local CmdLine, TaskName, TaskExists, XML, TaskSchd, TaskRoot, RunAsTask, Params
   Local TASK_CREATE := 0x2,  TASK_LOGON_INTERACTIVE_TOKEN := 3 
 
   Try TaskSchd  := ComObjCreate( "Schedule.Service" ),    TaskSchd.Connect()
@@ -19,7 +19,11 @@ RunAsTask() {                         ;  By SKAN,  http://goo.gl/yG6A1F,  CD:19/
   Catch
       Return "", ErrorLevel := 1    
   
-  CmdLine       := ( A_IsCompiled ? "" : """"  A_AhkPath """" )  A_Space  ( """" A_ScriptFullpath """"  )
+  if A_Args
+    for _,p in A_Args
+      Params .= (Params ? " ":"") p
+
+  CmdLine       := ( A_IsCompiled ? "" : """"  A_AhkPath """" )  A_Space  ( """" A_ScriptFullpath """"  ) A_Space . Params
   TaskName      := "[RunAsTask] " A_ScriptName " @" SubStr( "000000000"  DllCall( "NTDLL\RtlComputeCrc32"
                    , "Int",0, "WStr",CmdLine, "UInt",StrLen( CmdLine ) * 2, "UInt" ), -9 )
 
