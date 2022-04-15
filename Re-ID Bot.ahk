@@ -258,6 +258,7 @@
 		Info.IDs.Types := []
 		Info.IDs.Minimums := []
 		TypeController(1)
+		Goto, TotalCheck
 		return
 	FindID:
 		KeyWait, LButton, Up
@@ -319,7 +320,7 @@
 
 		if (Info.Settings.alwaystop)
 			AlwaysOnTop(botid)
-			
+
 		; Apply settings without restart
 		gc.ocrt := Info.Settings.ocrengine=1 ? "win10":"tess4" ; Changes OCR Engine
 		return
