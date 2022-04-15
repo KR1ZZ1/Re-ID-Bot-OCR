@@ -43,56 +43,89 @@
 			starttoggle := 1
 			IDList := "Accuracy|Evasion|Heal Effect|Crit Heal Chance|Crit Damage|Crit Defense|Crit Chance|Crit Dodge|Attack|Defense|Health|Mana|Block Rate|Block Strength|Physical Mastery|Physical Resistance|Physical Attack|Physical Defense|Earth Mastery|Earth Resistance|Earth Attack|Earth Defense|Water Mastery|Water Resistance|Water Attack|Water Defense|Fire Mastery|Fire Resistance|Fire Attack|Fire Defense|Wind Mastery|Wind Resistance|Wind Attack|Wind Defense|Light Mastery|Light Resistance|Light Attack|Light Defense|Dark Mastery|Dark Resistance|Dark Attack|Dark Defense"
 			CheckList = +,Accuracy,Evasion,Heal Effect,Crit Heal Chance,Crit Damage,Crit Defense,Crit Chance,Crit Dodge,Attack,Defense,Health,Mana,Block Rate,Block Strength,Physical Mastery,Physical Resistance,Physical Attack,Physical Defense,Earth Mastery,Earth Resistance,Earth Attack,Earth Defense,Water Mastery,Water Resistance,Water Attack,Water Defense,Fire Mastery,Fire Resistance,Fire Attack,Fire Defense,Wind Mastery,Wind Resistance,Wind Attack,Wind Defense,Light Mastery,Light Resistance,Light Attack,Light Defense,Dark Mastery,Dark Resistance,Dark Attack,Dark Defense
+			EBProp := "w170 Disabled center"
+			BtnProp := "x+m yp-1 wp-130"
 		; Gui Settings
-			Gui, 1: Margin, 3 3
 			Gui, 1: -DPIScale +hwndbotid
+			Gui, 1: Margin, 4, 4
 
 		Gui, 1: Add, Tab3,, Identify|Settings
 
-		Gui, 1: Tab, Identify
-			Gui, 1: Add, ListBox, Section r5 vidchoice Multi, % IDList
-			Gui, 1: Add, Text, Section x+m yp+3, X:
-			Gui, 1: Add, Edit, % "x+m yp-3 Disabled vxbox", 0000
-			Gui, 1: Add, Text, x+m yp+3, Y:
-			Gui, 1: Add, Edit, % "x+m yp-3 Disabled vybox", 0000
-			Gui, 1: Add, Text, x+m yp+3, W:
-			Gui, 1: Add, Edit, % "x+m yp-3 Disabled vwbox", 0000
-			Gui, 1: Add, Text, x+m yp+3, H:
-			Gui, 1: Add, Edit, % "x+m yp-3 Disabled vhbox", 0000
-			FieldController(Info.Field)
-			Gui, 1: Add, Button, x+m yp-1 gSet vSetB, Find
-			Gui, 1: Add, Radio, % (Info.IDs.idmode=1?"Checked":"") " xs vidmode1", Multi-ID
-			Gui, 1: Add, Radio, % (Info.IDs.idmode=2?"Checked":"") " x+m vidmode2", Single-ID
-			Gui, 1: Add, Radio, % (Info.IDs.idmode=3?"Checked":"") " x+m vidmode3", Single-ID (Total Minimum)
-			Gui, 1: Add, DDL, % "Choose" Info.IDs.count " xs w30 vcount", 1|2|3|4|5|6|7|8
-			Gui, 1: Add, Checkbox, % (Info.IDs.resetid=1?"Checked":"") " x+m yp+4 vresetid gResetChange", Reset ID
-			Gui, 1: Add, Button, yp-5 x+m vChangeB gChange Disabled, Change
-			Gui, 1: Add, Button, x+m vStartB gStart, Start
+		Gui, 1: Tab, Identify ; All Identify tab controls
+
+			; Identify, Reset & Search field - Position Display
+				Gui, 1: Add, ListBox, Section r12 vidchoice Multi, % IDList
+				Gui, 1: Add, Edit, Section x+m %EBProp% vIDInfo, Identify Button
+				Gui, 1: Add, Button, %BtnProp% gFindID vFindIDB, Find
+				Gui, 1: Add, Edit, xs %EBProp% vResInfo, Reset Button
+				Gui, 1: Add, Button, %BtnProp% gFindRes vFindResB, Find
+				Gui, 1: Add, Edit, xs %EBProp% vSFInfo, Search Field
+				Gui, 1: Add, Button, %BtnProp% gSet vSetB, Set
+				FieldController(Info) ; Updates positions
+
+			; Multi, Single & Total
+				Gui, 1: Add, Groupbox, Section xs y+-2 r1 w213
+				Gui, 1: Font, c6D6D6D
+				Gui, 1: Add, Text, xp+9 yp+13 w30, Mode:
+				Gui, 1: Font
+				Gui, 1: Add, Radio, % (Info.IDs.idmode=1?"Checked":"") " x+15 vidmode1", Multi
+				Gui, 1: Add, Radio, % (Info.IDs.idmode=2?"Checked":"") " x+m vidmode2", Single
+				Gui, 1: Add, Checkbox, % (Info.IDs.idmode=3?"Checked":"") " x+m vTCheck gTotalCheck", Total
+
+			; Number of ID DDL
+				Gui, 1: Add, Groupbox, Section xs y+6 r1 w83
+				Gui, 1: Font, c6D6D6D
+				Gui, 1: Add, Text, xp+9 yp+13 w30, ID's:
+				Gui, 1: Font
+				Gui, 1: Add, DDL, % "Choose" Info.IDs.count " x+1 yp-4 w30 vcount", 1|2|3|4|5|6|7
+
+			; Reset Checkbox
+				Gui, 1: Add, Groupbox, x+18 ys r1 w82
+				Gui, 1: Add, Checkbox, % (Info.IDs.resetid=1?"Checked":"") " xp+11 yp+13 vresetid gResetChange", Reset ID
+
+			; Change & Start Button
+				Gui, 1: Add, Button, xs y+11 vChangeB gChange Disabled, Change
+				Gui, 1: Add, Button, x+m wp vStartB gStart, Start
+
+			Gosub, TotalCheck ; Enables/Disables Multi-ID & ID Count
+
 			if (Info.Settings.savetype && Info.IDs.Types[1] != "") {
 				TypeController(0)
 				for _,curr in Info.IDs.Types
 					GuiControl, 1:ChooseString, idchoice, % curr
 				}
 
-		Gui, 1: Tab, Settings
-			Gui, 1: Add, Radio, % (Info.Settings.ocrengine=1?"Checked":"") " vocrengine", Windows OCR Engine (Windows 10+)
-			Gui, 1: Add, Radio, % (Info.Settings.ocrengine=2?"Checked":""), Tesseract
-			Gui, 1: Add, Checkbox, % (Info.Settings.savepos?"Checked":"") " vsavepos", Save Search-field Position
-			Gui, 1: Add, Checkbox, % (Info.Settings.savetype?"Checked":"") " x+m vsavetype", Save selected ID-Types
-			Gui, 1: Add, Checkbox, % (Info.Settings.showimg?"Checked":"") " Section x8 y+m vshowimg", Show Image-Capture
-			Gui, 1: Add, Checkbox, % (Info.Settings.fixstats?"Checked":"") " x+m vfixstats", Fix OCR Errors
-			Gui, 1: Add, Edit, Section x8 y+m h17 vscreendelay, % Info.Settings.screendelay
-			Gui, 1: Add, Text, x+m ys+3, ms delay after OCR failed to find information
-			Gui, 1: Add, Edit, Section x8 y+m h17 viddelay, % Info.Settings.iddelay
-			Gui, 1: Add, Text, x+m ys+3, ms delay between Identifications
-			Gui, 1: Add, Button, x7 y+m gApply, Apply
-			Gui, 1: Add, Button, x+m gReset, Reset
+		Gui, 1: Tab, Settings ; All Settings tab controls
+
+			; OCR Engines
+				Gui, 1: Add, Radio, % (Info.Settings.ocrengine=1?"Checked":"") " vocrengine", Windows OCR Engine (Windows 10+)
+				Gui, 1: Add, Radio, % (Info.Settings.ocrengine=2?"Checked":""), Tesseract
+
+			; Checkboxes
+				Gui, 1: Add, Checkbox, % (Info.Settings.savepos?"Checked":"") " Section vsavepos", Save Search-field Position
+				Gui, 1: Add, Checkbox, % (Info.Settings.savetype?"Checked":"") " x+m wp vsavetype", Save selected ID-Types
+				Gui, 1: Add, Checkbox, % (Info.Settings.showimg?"Checked":"") " Section xs y+m wp vshowimg", Show Image-Capture
+				Gui, 1: Add, Checkbox, % (Info.Settings.fixstats?"Checked":"") " x+m wp vfixstats", Fix OCR Errors
+				Gui, 1: Add, Checkbox, % (Info.Settings.alwaystop?"Checked":"") " Section xs y+m wp valwaystop", Always on top
+
+			; Input fields
+				Gui, 1: Add, Edit, Section xs y+m h17 vscreendelay, % Info.Settings.screendelay
+				Gui, 1: Add, Text, x+m ys+3, ms delay after OCR failed to find information
+				Gui, 1: Add, Edit, Section xs y+m h17 viddelay, % Info.Settings.iddelay
+				Gui, 1: Add, Text, x+m ys+3, ms delay between Identifications
+
+			; Apply & Reset Buttons
+				Gui, 1: Add, Button, xs y+m gApply, Apply
+				Gui, 1: Add, Button, x+m gReset, Reset
 
 		Gui, 1: Tab ; Outside of Tab3
 			Gui, 1: Add, Text, x4 w175 h0 voutputdisplay
 			Gui, 1: Add, Picture, x+m w0 h0 vimagedisplay, % "HBITMAP:*" ()
 
 		Gui, 1: Show, % (Info.GUI.X != "ERROR" || Info.GUI.Y != "ERROR" ? "x" . Info.GUI.X . " y" . Info.GUI.Y:""), % sName " " Ver
+
+		if (Info.Settings.alwaystop)
+			AlwaysOnTop(botid)
 
 		SetControlDelay, % (Info.IDs.resetid ? "5":"-1")
 		id := FindGame() ; Finds and sets target client
@@ -131,10 +164,9 @@
 			}
 
 		TypeController(0)
-		Info.IDs.idmode := idmode1?1:idmode2?2:3
+		Info.IDs.idmode := TCheck?3:idmode2?2:1
 		Info.IDs.count := count
 		Info.IDs.resetid := resetid
-
 
 		If (starttoggle && change) {
 			Choices := StrSplit(idchoice, "|"), Minimums := []
@@ -148,11 +180,13 @@
 			Info.IDs.Types := Choices
 			change := 0
 			}
+		
 		GuiControl,, StartB, % ((starttoggle:=!starttoggle) ? "Start":"Stop")
 		GuiControl, % "1:" (starttoggle ? "Enabled":"Disabled"), SetB
 		rx := Info.IDs.ResetButton.X, ry := Info.IDs.ResetButton.Y ; Reset Button Pos
 		ix := Info.IDs.IDButton.X, iy := Info.IDs.IDButton.Y ; Identify Button Pos
-		SetTimer, OCRTimer, -1
+
+		SetTimer, OCRTimer, -1 ; Starts IDing
 		return
 	OCRTimer:
 		scrollcount++
@@ -225,7 +259,19 @@
 		Info.IDs.Minimums := []
 		TypeController(1)
 		return
-	Set:
+	FindID:
+		KeyWait, LButton, Up
+		While !GetKeyState("LButton", "P") {
+			MouseGetPos, idx, idy, id
+			WinActivate, % "ahk_id " id
+			if (ox != idx || oy != idy) {
+				ox := idx, oy := idy
+				ToolTip, Left click Identify Button.
+				}
+			}
+		ToolTip
+		Return
+	FindRes:
 		Hotkey, LButton, Void, On
 		KeyWait, LButton, Up
 		While !GetKeyState("LButton", "P") {
@@ -237,16 +283,8 @@
 				}
 			}
 		ToolTip
-		KeyWait, LButton, Up
-		While !GetKeyState("LButton", "P") {
-			MouseGetPos, idx, idy, id
-			WinActivate, % "ahk_id " id
-			if (ox != idx || oy != idy) {
-				ox := idx, oy := idy
-				ToolTip, Left click Identify Button.
-				}
-			}
-		ToolTip
+		Return
+	Set:
 		KeyWait, LButton, Up
 		Hotkey, LButton, Void, Off
 		Info.IDs.IDButton.X := idx, Info.IDs.IDButton.Y := idy, Info.IDs.ResetButton.X := resx, Info.IDs.ResetButton.Y := resy
@@ -259,6 +297,15 @@
 		WinActivate, % "ahk_id " botid
 		void:
 		return
+	TotalCheck:
+		Gui, Submit, NoHide
+		GuiControl, % (TCheck ? "Disabled":"Enabled"), idmode1
+		GuiControl, % (TCheck ? "Disabled":"Enabled"), count
+		If (TCheck) {
+			idmode := 3
+			GuiControl,, idmode2, 1
+		}
+		Return
 	Apply:
 		Gui, Submit, NoHide
 		Info.Settings.ocrengine 	:= ocrengine
@@ -268,7 +315,11 @@
 		Info.Settings.screendelay 	:= screendelay
 		Info.Settings.iddelay 		:= iddelay
 		Info.Settings.fixstats		:= fixstats
+		Info.Settings.alwaystop		:= alwaystop
 
+		if (Info.Settings.alwaystop)
+			AlwaysOnTop(botid)
+			
 		; Apply settings without restart
 		gc.ocrt := Info.Settings.ocrengine=1 ? "win10":"tess4" ; Changes OCR Engine
 		return
