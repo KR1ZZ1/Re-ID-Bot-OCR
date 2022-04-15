@@ -5,7 +5,6 @@ TypeController(x) {
     GuiControl, % "1:" (x ? "Enabled":"Disabled"), idmode1
     GuiControl, % "1:" (x ? "Enabled":"Disabled"), idmode2
     GuiControl, % "1:" (x ? "Enabled":"Disabled"), idmode3
-    GuiControl, % "1:" (x ? "Enabled":"Disabled"), SetB
     GuiControl, % "1:" (!x ? "Enabled":"Disabled"), ChangeB
     }
 FieldController(this) {
