@@ -1,7 +1,7 @@
 ; Written on Autohotkey Version: 1.1.32.00
 ; Auto-Run >>
 	; Version Control
-		Ver := "0.0.2", sName := "Re-ID Bot OCR", Name := sName " " A_Year "." Ver
+		Ver := "0.0.3", sName := "Re-ID Bot OCR", Name := sName " " A_Year "." Ver
 	; Default startup parameters
 		#SingleInstance, Off
 		#Persistent
@@ -92,7 +92,7 @@
 			Gui, 1: Add, Text, x4 w175 h0 voutputdisplay
 			Gui, 1: Add, Picture, x+m w0 h0 vimagedisplay, % "HBITMAP:*" ()
 
-		Gui, 1: Show, % (Info.GUI.X != "ERROR" || Info.GUI.Y != "ERROR" ? "x" . Info.GUI.X . " y" . Info.GUI.Y:""), % sName
+		Gui, 1: Show, % (Info.GUI.X != "ERROR" || Info.GUI.Y != "ERROR" ? "x" . Info.GUI.X . " y" . Info.GUI.Y:""), % sName " " Ver
 
 		SetControlDelay, % (Info.IDs.resetid ? "5":"-1")
 		id := FindGame() ; Finds and sets target client
