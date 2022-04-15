@@ -262,6 +262,7 @@
 		return
 	FindID:
 		KeyWait, LButton, Up
+		Hotkey, LButton, Void, On
 		While !GetKeyState("LButton", "P") {
 			MouseGetPos, idx, idy, id
 			WinActivate, % "ahk_id " id
@@ -271,10 +272,14 @@
 				}
 			}
 		ToolTip
+		KeyWait, LButton, Up
+		Hotkey, LButton, Void, Off
+		gc.target := id, Info.IDs.IDButton.X := idx, Info.IDs.IDButton.Y := idy
+		FieldController(Info)
 		Return
 	FindRes:
-		Hotkey, LButton, Void, On
 		KeyWait, LButton, Up
+		Hotkey, LButton, Void, On
 		While !GetKeyState("LButton", "P") {
 			MouseGetPos, resx, resy, id
 			WinActivate, % "ahk_id " id
@@ -284,17 +289,26 @@
 				}
 			}
 		ToolTip
+		KeyWait, LButton, Up
+		Hotkey, LButton, Void, Off
+		gc.target := id, Info.IDs.ResetButton.X := resx, Info.IDs.ResetButton.Y := resy
+		FieldController(Info)
 		Return
 	Set:
 		KeyWait, LButton, Up
-		Hotkey, LButton, Void, Off
-		Info.IDs.IDButton.X := idx, Info.IDs.IDButton.Y := idy, Info.IDs.ResetButton.X := resx, Info.IDs.ResetButton.Y := resy
+		Hotkey, LButton, Void, On
+
+		WinActivate, % "ahk_id " gc.target
+
 		gc := "" ; Close previous ocr instance
 		gc := new MultiOCR()
 		gc.ocrt := Info.Settings.ocrengine=1 ? "win10":"tess4" ; Changes OCR Engine
-		gc.target := id, Info.Field.X := gc.x, Info.Field.Y := gc.y, Info.Field.W := gc.w, Info.Field.H := gc.h
+		Info.Field.X := gc.x, Info.Field.Y := gc.y, Info.Field.W := gc.w, Info.Field.H := gc.h
 
-		FieldController(Info.Field)
+		KeyWait, LButton, Up
+		Hotkey, LButton, Void, Off
+
+		FieldController(Info)
 		WinActivate, % "ahk_id " botid
 		void:
 		return
