@@ -28,9 +28,8 @@
 		#Include <FindGame> 	; Finds all game instances
 		#Include <Compare> 		; Used for comparing found stats to chosen stats
 		#Include <MultiOCR> 	; Wrapper for Windows OCR Engine and Tesseract
-		#Include <Settings> 	; Generate / Load Settings
 		#Include <GUIFunctions> ; Functions for controlling GUI
-		#Include <ReloadScript> ; Reload script with params
+		#Include <Settings> 	; Generate / Load Settings
 	; OCR Setup
 		If !pToken := Gdip_Startup() {
 			MsgBox, 48, gdiplus error!, Gdiplus failed to start. Please ensure you have gdiplus on your system
