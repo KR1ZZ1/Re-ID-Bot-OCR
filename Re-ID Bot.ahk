@@ -128,7 +128,7 @@
 			AlwaysOnTop(botid)
 
 		SetControlDelay, % (Info.IDs.resetid ? "5":"-1")
-		id := FindGame() ; Finds and sets target client
+		id := FindGame(ReloadInfo.Target) ; Finds and sets target client
 		gc := new MultiOCR(Info.Settings.ocrengine=1 ? "win10":"tess4", Info.Settings.savepos ? Info.Field:"", id ? id:"")
 		gc.target := id
 
@@ -139,7 +139,10 @@
 
 ; Hotkeys >>
 	#If (WinActive("ahk_id " botid) || WinActive("ahk_id " gc.target))
-		^f5::ReloadScript(!starttoggle ? "/idreload":"")
+		^f5::
+			Gosub, WriteSettings
+			ReloadScript(!starttoggle ? "/idreload":"", !starttoggle ? ReloadInfo:"")
+			return
 	#If
 	^esc::
 		Goto, GuiClose ; Ctrl + ESC = ExitApp
@@ -148,7 +151,7 @@
 ; Labels >>
 	Start:
 		Gui, Submit, NoHide
-		scrollcount := 0
+		ReloadInfo.Scrolls := 0
 
 		if (!guiw && Info.Settings.showimg) {
 			Tick := A_TickCount
@@ -189,7 +192,13 @@
 		SetTimer, OCRTimer, -1 ; Starts IDing
 		return
 	OCRTimer:
-		scrollcount++
+		ReloadInfo.Scrolls := ReloadInfo.Scrolls + 1
+
+		If ( (SubStr(ReloadInfo.Scrolls, -2) = "000") && Info.Settings.savepos ) { ; Restart every thousand.
+			Gosub, WriteSettings
+			ReloadScript("/idreload", ReloadInfo)
+			}
+
 		Attempt := 0
 		CheckAgain:
 		
@@ -211,7 +220,7 @@
 			}
 		if result not contains %CheckList%
 			{ ; Checks if any id's / "+" is present in screen capture. If not the screenshot happened too soon.
-				GuiControl, 1:, outputdisplay, % fixedresult "`nTook " A_TickCount - Tick "ms with " Attempt " attempt" (Attempt > 1 ? "s":"") ".`nTotal Scrolls: " scrollcount
+				GuiControl, 1:, outputdisplay, % fixedresult "`nTook " A_TickCount - Tick "ms with " Attempt " attempt" (Attempt > 1 ? "s":"") ".`nTotal Scrolls: " ReloadInfo.Scrolls
 				Gosub, ClearBitmaps
 				if (Attempt > 400) {
 					Gosub, OCREnd
@@ -222,7 +231,7 @@
 				Goto, CheckAgain
 			}
 		Compare(Info, result, found, fixedresult, gc)
-		GuiControl, 1:, outputdisplay, % fixedresult "`nTook " A_TickCount - Tick "ms with " Attempt " attempt" (Attempt > 1 ? "s":"") ".`nTotal Scrolls: " scrollcount
+		GuiControl, 1:, outputdisplay, % fixedresult "`nTook " A_TickCount - Tick "ms with " Attempt " attempt" (Attempt > 1 ? "s":"") ".`nTotal Scrolls: " ReloadInfo.Scrolls
 		Gosub, ClearBitmaps
 		if (found) { ; Found ID, stop re-iding
 			Gosub, OCREnd
@@ -274,7 +283,7 @@
 		ToolTip
 		KeyWait, LButton, Up
 		Hotkey, LButton, Void, Off
-		gc.target := id, Info.IDs.IDButton.X := idx, Info.IDs.IDButton.Y := idy
+		ReloadInfo.Target := gc.target := id, Info.IDs.IDButton.X := idx, Info.IDs.IDButton.Y := idy
 		FieldController(Info)
 		Return
 	FindRes:
@@ -291,7 +300,7 @@
 		ToolTip
 		KeyWait, LButton, Up
 		Hotkey, LButton, Void, Off
-		gc.target := id, Info.IDs.ResetButton.X := resx, Info.IDs.ResetButton.Y := resy
+		ReloadInfo.Target := gc.target := id, Info.IDs.ResetButton.X := resx, Info.IDs.ResetButton.Y := resy
 		FieldController(Info)
 		Return
 	Set:
@@ -321,7 +330,7 @@
 			GuiControl,, idmode2, 1
 		}
 		Return
-	Apply:
+	Apply: ; Apply settings without restart
 		Gui, Submit, NoHide
 		Info.Settings.ocrengine 	:= ocrengine
 		Info.Settings.savepos 		:= savepos
@@ -331,24 +340,24 @@
 		Info.Settings.iddelay 		:= iddelay
 		Info.Settings.fixstats		:= fixstats
 		Info.Settings.alwaystop		:= alwaystop
-
+		gc.ocrt 					:= Info.Settings.ocrengine=1 ? "win10":"tess4" ; Changes OCR Engine
 		AlwaysOnTop(botid, alwaystop)
-
-		; Apply settings without restart
-		gc.ocrt := Info.Settings.ocrengine=1 ? "win10":"tess4" ; Changes OCR Engine
 		return
 	Reset:
 		FileDelete, Settings.json
 		Reload
 		ExitApp ; Some reloads happened to open new instance without closing current
+	WriteSettings:
+		WinGetPos, cx, cy,,, % "ahk_id" botid
+		Info.GUI.X := cx, Info.GUI.Y := cy
+		newdump := JSON.Dump(Info)
+		If FileExist("Settings.json")
+			FileDelete, Settings.json
+		FileAppend, % newdump, Settings.json
+		return
 	GuiClose:
 		GuiEscape:
-			WinGetPos, cx, cy,,, % "ahk_id" botid
-			Info.GUI.X := cx, Info.GUI.Y := cy
-			newdump := JSON.Dump(Info)
-			If FileExist("Settings.json")
-				FileDelete, Settings.json
-			FileAppend, % newdump, Settings.json
+			Gosub, WriteSettings
 			Gdip_Shutdown(pToken)
 			ReplaceSystemCursors("") ; Recover Cursor on unexpected exit during search area select.
 			ExitApp
