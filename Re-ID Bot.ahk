@@ -129,10 +129,10 @@
 		SetControlDelay, % (Info.IDs.resetid ? "5":"-1")
 		id := FindGame(ReloadInfo.Target) ; Finds and sets target client
 		gc := new MultiOCR(Info.Settings.ocrengine=1 ? "win10":"tess4", Info.Settings.savepos ? Info.Field:"", id ? id:"")
-		gc.target := id
+		ReloadInfo.Target := gc.target := id
 
 		if (idReload() && Info.Settings.savepos)
-			Goto, Start
+			Goto, ReloadStart
 	return
 	; <<<<<<<<<<<
 
@@ -149,8 +149,9 @@
 
 ; Labels >>
 	Start:
-		Gui, Submit, NoHide
 		ReloadInfo.Scrolls := 0
+		ReloadStart:
+		Gui, Submit, NoHide
 
 		if (!guiw && Info.Settings.showimg) {
 			Tick := A_TickCount
