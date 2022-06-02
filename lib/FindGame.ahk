@@ -1,10 +1,15 @@
 #Include <WTSEnumProcesses>
-FindGame() {
+FindGame(target := "") {
 	clientcount := 0, list := []
 	Loop, Parse, % WTSEnumProcesses(), `n
 		{
 		If A_LoopField Contains pvegame.exe,pvpgame.exe,DeveloperClient.exe,DH_Developer.exe,pem.exe
+			{
 			clientcount++, list[clientcount] := A_LoopField
+			currentid := WinExist("ahk_pid" StrSplit(A_LoopField, "`t")[1])
+			if (target = currentid)
+				Return target
+			}
 		}
 	If (clientcount < 1)
 		Return 0
